@@ -4,6 +4,7 @@ const mongoose=require("mongoose")
 const cors=require("cors")
 const User=require("./models/User")
 const Trip=require("./models/Trip")
+const Booking=require("./models/Booking")
 
 app.use(express.json())
 app.use(cors())
@@ -164,6 +165,56 @@ app.post("/register",async(req,res)=>{
 app.get("/",(req,res)=>{
     res.send("hello world")
 
+})
+
+//localhost:8888/book -> post
+
+app.post("/book",async(req,res)=>{
+    try{
+        const {userId,tripId,seatsBooked,price}=req.body
+
+        const trip=await Trip.findById(tripId)
+
+        if(trip.seats<seatsBooked){
+            return res.status(400).json({message:"not enough seats available"})
+        }else{
+            trip.seats=trip.seats-seatsBooked;
+            trip.passengers.push({name:userId,seats:seatsBooked})
+            await trip.save()
+
+            const booking=await new Booking({
+                userId:userId,
+                tripId:tripId,
+                seatsBooked:seatsBooked,
+                price:price
+            }).save()
+
+            const user=await User.findById(userId)
+            user.trips.push({
+                from:trip.from,
+                to:trip.to,
+                date:trip.date,
+                time:trip.time,
+                price:trip.price,
+                seats:seatsBooked
+            })
+            await user.save()   
+
+            res.status(201).json({message:"trip booked successfully",booking})
+
+        }
+
+
+
+
+
+
+
+
+    }catch(err){
+        console.log("error in booking trip",err)
+        res.status(500).json({message:"error in booking trip"})
+    }
 })
 
 //backend name= loclahost:8888
