@@ -126,7 +126,13 @@ app.get("/search",async(req,res)=>{
 
 app.get("/alltrips",async(req,res)=>{
     try{
-        const alltrips=await Trip.find()
+        const now= new Date()
+        let todaydate=now.toISOString().split("T")[0]
+
+        const currentTime= now.toTimeString().slice(0,5)
+
+
+        const alltrips=await Trip.find({$or:[{date:{$gte:todaydate}},{date:todaydate,time:{$gte:currentTime}}]})
         res.status(200).json({message:"all trips found successfully",trips:alltrips})
 
 
@@ -143,6 +149,13 @@ app.post("/register",async(req,res)=>{
 
     try{
         const {email,username,password}=req.body
+        if(!email || !username || !password){
+            return res.status(400).json({message:"all fields are required"})
+        }
+        const existinguser=await User.findOne({email:email})
+        if(existinguser){
+            return res.status(400).json({message:"user already exists"})
+        }
         const user=await new User({
             email:email,
             username:username,
@@ -150,16 +163,55 @@ app.post("/register",async(req,res)=>{
         }).save()
         res.status(201).json({message:"user registered successfully",user})
 
-
-
-
-    }catch(err){
+ }catch(err){
         console.log("error in registering user",err)
         res.status(500).json({message:"error in registering user"})
     }
 
 
 })
+
+
+app.post("/login",async(req,res)=>{
+
+try{
+    //receiving info from fe as req.body.email and req.body.password
+    const {email,password}=req.body
+
+    //checking if email and password are provided
+    if(!email || !password){
+        return res.status(400).json({message:"all fields are required"})
+    }
+
+    //checking if user exists in database
+  const checkinguser= await User.findOne({email:email})
+//   checkinguser={
+//     email:"shanmukh@gmail,com",
+//     password:"shanmukh123",
+//     username:"shanmukh"
+//   }
+// chckinguser={}->false
+
+  if(!checkinguser){
+    return res.status(400).json({message:"account not found, please register"})
+  }
+
+if(checkinguser.password!==password){
+    return res.status(400).json({message:"wrong password"})
+}
+res.status(200).json({message:"user logged in successfully",user:checkinguser})
+
+}catch(err){
+    console.log("error in logging in user",err)
+    res.status(500).json({message:"error in logging in user"})
+}
+
+
+})
+
+
+
+
 
 //localhost:8888 -> search -> get
 app.get("/",(req,res)=>{
