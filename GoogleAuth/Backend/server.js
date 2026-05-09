@@ -10,7 +10,7 @@ app.use(express.json())
 
 async function connectDB(){
     try{
-        await mongoose.connect("mongodb://localhost:27017/googleApp")
+        await mongoose.connect("mongodb://localhost:27017/demogoogleauthapp")
         console.log("Connected to MongoDB")
 
     }catch(err){
@@ -64,7 +64,7 @@ try {
     // user={}
 
     if(user){
-        res.json("User already exists and authenticated successfully")
+        res.json("User already exists and authenticated successfully",user)
     }else{
         user=new User({
             name,
